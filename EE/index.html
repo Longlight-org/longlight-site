@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Elephant Engine</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    :root { --bg:#ffffff; --fg:#0b0b0b; --muted:#6b7280; --link:#0a66c2; }
+    * { box-sizing:border-box; }
+    html,body { margin:0; padding:0; background:var(--bg); color:var(--fg);
+      font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif; }
+    .wrap { max-width:620px; margin:14vh auto 10vh; padding:0 20px; text-align:center; }
+    h1 { font-size:clamp(28px,6vw,40px); margin:0 0 12px; }
+    p { color:var(--muted); font-size:18px; margin:0 0 32px; }
+    .btn { display:inline-block; padding:14px 36px; font-size:17px; font-weight:600;
+      color:#fff; background:var(--link); border-radius:8px; text-decoration:none; }
+    .btn:hover { opacity:.9; }
+    .back { display:block; margin-top:36px; font-size:14px; color:var(--muted); }
+    a { color:var(--link); text-decoration:none; }
+    a:hover { text-decoration:underline; }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <h1>Elephant Engine</h1>
+    <p>Host and join Elephant Engine sessions.</p>
+    <a class="btn" href="https://ee.longlight.org">Start Session</a>
+    <a class="back" href="/">&larr; Back to Longlight</a>
+  </main>
+</body>
+</html>
