@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Longlight | Technical Documentation</title>
+    
+    <!-- Standard Production Styling (Zero Bloat) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@200;300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&display=swap" rel="stylesheet">
+    
+    <style>
+        /* --- BRAND TOKENS --- */
+        :root {
+            --bg-dark: #11142B;
+            --bg-panel: #171B3B;
+            --gold: #E9BE74;
+            --white: #FFFFFF;
+            --font-serif: 'Playfair Display', serif;
+            --font-sans: 'Montserrat', sans-serif;
+            --transition-smooth: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+            --transition-slow: transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .font-playfair { font-family: var(--font-serif); }
+        .font-montserrat { font-family: var(--font-sans); }
+        body { background-color: var(--bg-dark); color: var(--white); margin: 0; padding: 0; overflow-x: hidden; -webkit-font-smoothing: antialiased; }
+        
+        ::selection { background: var(--gold); color: var(--bg-panel); }
+        
+        /* --- ARCHITECTURAL WRAPPER --- */
+        .slide-container {
+            width: 100%;
+            padding: 120px 5% 150px;
+            background-color: var(--bg-panel);
+            min-height: 100vh;
+            position: relative;
+            z-index: 10;
+        }
+
+        .section-padding { 
+            padding-top: 6rem; 
+            padding-bottom: 6rem; 
+        }
+        @media (min-width: 1024px) { 
+            .section-padding { 
+                padding-top: 8rem; 
+                padding-bottom: 10rem; 
+            } 
+        }
+
+        .tech-label {
+            font-size: clamp(9px, 0.8vw, 11px);
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            color: var(--gold);
+            font-weight: 700;
+            opacity: 0.8;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .bg-accent {
+            position: fixed;
+            top: 10%;
+            right: -5%;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(233, 190, 116, 0.05) 0%, rgba(23, 27, 59, 0) 70%);
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* ACCORDION LOGIC (INTEGRATED) */
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.6s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.6s ease;
+            opacity: 0;
+        }
+        .accordion-item.is-open .accordion-content { opacity: 1; }
+        .accordion-icon { transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
+        .accordion-item.is-open .accordion-icon { transform: rotate(180deg); }
+
+        /* SPECIMEN GRIDS (INTEGRATED) */
+        .specimen-cell {
+            aspect-ratio: 1/1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        .specimen-cell:hover { border-color: rgba(233, 190, 116, 0.4); background: rgba(233, 190, 116, 0.02); }
+        .cell-index { position: absolute; top: 4px; left: 4px; font-size: 7px; color: rgba(233, 190, 116, 0.3); font-weight: 600; }
+
+        /* ================================================== */
+        /* --- 12-COLUMN DYNAMIC HERO GRID (LOCKED) ---       */
+        /* ================================================== */
+        .hero-layout {
+            display: flex; 
+            flex-direction: column; 
+            gap: 5vw; 
+            position: relative; 
+            z-index: 10;
+        }
+
+        @media (min-width: 1024px) {
+            .hero-layout {
+                display: grid; 
+                grid-template-columns: repeat(12, 1fr); 
+                gap: 5vw 3vw; 
+            }
+            .block-text { grid-column: 1 / 8; grid-row: 1; align-self: center; }
+            .block-big-img { grid-column: 8 / 13; grid-row: 1; }
+            .block-small-imgs { grid-column: 1 / 8; grid-row: 2; }
+            .block-newsletter { grid-column: 8 / 13; grid-row: 2; }
+        }
+
+        .hero-h1 { 
+            font-family: var(--font-serif); 
+            font-size: clamp(3rem, 7vw, 7.5rem); 
+            line-height: 1.1; font-weight: 500; 
+            padding: 0.15em 0;
+        }
+        .hero-h1 span { color: var(--gold); font-style: italic; font-weight: 400; display: block; }
+        
+        .hero-desc {
+            font-size: clamp(1rem, 1.2vw, 1.125rem); font-weight: 300;
+            line-height: 1.7; color: rgba(255,255,255,0.7);
+            max-width: 40rem; margin-top: 2rem;
+        }
+
+        .hero-link {
+            display: inline-flex; align-items: center; color: var(--white);
+            font-size: 0.75rem; letter-spacing: 0.2em; font-weight: 700;
+            text-transform: uppercase; margin-top: 3rem; text-decoration: none;
+            transition: color 0.3s ease;
+        }
+        .hero-link:hover { color: var(--gold); }
+        .hero-link .line { width: 3rem; height: 1px; background: var(--white); margin-left: 1.5rem; transition: all 0.3s ease; }
+        .hero-link:hover .line { width: 4.5rem; background: var(--gold); }
+
+        .image-card {
+            position: relative; overflow: hidden; background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.1); cursor: pointer;
+            transition: border-color 0.4s ease; display: flex; flex-direction: column;
+            width: 100%;
+        }
+        .image-card:hover { border-color: var(--gold); }
+        .image-card img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: var(--transition-slow); z-index: 1; }
+        .image-card:hover img { transform: scale(1.05); }
+
+        .card-overlay {
+            position: relative; z-index: 10;
+            background: linear-gradient(to top, rgba(17, 20, 43, 0.9) 0%, rgba(17, 20, 43, 0.1) 70%, transparent 100%);
+            display: flex; flex-direction: column; justify-content: flex-end;
+            padding: clamp(1.5rem, 8%, 4rem);
+            height: 100%; min-height: 400px;
+        }
+        .block-big-img .card-overlay { min-height: clamp(450px, 60vh, 700px); }
+
+        .card-label {
+            font-size: clamp(9px, 0.8vw, 11px); color: var(--gold);
+            font-weight: 700; text-transform: uppercase; letter-spacing: 0.2em;
+            margin-bottom: 1.5rem;
+            transition: color 0.3s ease;
+        }
+        .image-card:hover .card-label { color: var(--white); }
+
+        .card-title {
+            font-family: var(--font-serif); color: var(--white);
+            font-size: clamp(1.25rem, 2vw, 1.85rem); line-height: 1.35;
+            transition: color 0.3s ease; padding: 0.15em 0;
+            max-width: 95%;
+        }
+        .card-title-lg { font-size: clamp(1.5rem, 4vw, 3.5rem); line-height: 1.1; }
+        .image-card:hover .card-title { color: var(--gold); }
+
+        .btn-explore {
+            display: inline-flex; align-items: center; background: rgba(255, 255, 255, 0.9);
+            color: var(--bg-dark); font-weight: 700; font-size: clamp(0.65rem, 1.2vw, 0.75rem);
+            text-transform: uppercase; letter-spacing: 0.15em; 
+            padding: clamp(0.75rem, 1.5vw, 1rem) clamp(1.25rem, 2.5vw, 1.75rem);
+            margin-top: 2rem; transition: all 0.3s ease; width: fit-content;
+        }
+        .btn-explore:hover { background: var(--gold); }
+
+        .small-cards-row { display: flex; flex-wrap: wrap; gap: 3vw; }
+        .small-cards-row .image-card { flex: 1 1 280px; }
+
+        .newsletter-module {
+            background: linear-gradient(to bottom right, #0B0E60, var(--bg-panel));
+            border: 1px solid rgba(255, 255, 255, 0.1); padding: clamp(2rem, 8%, 3.5rem);
+            display: flex; flex-direction: column; justify-content: center; height: 100%;
+        }
+        .news-h3 { font-family: var(--font-serif); font-size: clamp(1.5rem, 3vw, 2.5rem); margin-bottom: 0.5rem; line-height: 1.2; }
+        .news-desc { font-size: clamp(0.85rem, 1.1vw, 1.1rem); font-weight: 300; color: rgba(255,255,255,0.6); line-height: 1.6; }
+        .news-form { margin-top: 2.5rem; display: flex; flex-direction: column; gap: 1.5rem; width: 100%; }
+        
+        .form-row { display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-end; width: 100%; }
+        .form-row .input-wrapper { flex: 1 1 200px; }
+        
+        .input-wrapper { border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 0.5rem; transition: border-color 0.3s ease; }
+        .input-wrapper:focus-within { border-color: var(--gold); }
+        .input-field { width: 100%; background: transparent; border: none; outline: none; color: var(--white); font-size: 1rem; }
+        .btn-sub { background: var(--gold); color: var(--bg-dark); font-weight: 800; padding: 1rem 2.5rem; text-transform: uppercase; font-size: 11px; letter-spacing: 0.15em; transition: all 0.3s; width: fit-content; }
+        .btn-sub:hover { background: var(--white); }
+        .privacy-wrap { display: flex; align-items: flex-start; gap: 0.75rem; cursor: pointer; margin-top: 0.5rem; }
+        .checkbox { width: 18px; height: 18px; border: 1px solid rgba(255,255,255,0.2); flex-shrink: 0; margin-top: 2px; transition: background 0.3s; display: flex; align-items: center; justify-content: center; }
+        .checkbox.active { background: var(--gold); border-color: var(--gold); }
+        .privacy-txt { font-size: 11px; color: rgba(255,255,255,0.4); font-weight: 300; line-height: 1.4; }
+        .privacy-txt span { color: rgba(255,255,255,0.6); transition: color 0.3s ease; cursor: pointer; }
+        .privacy-txt span:hover { color: var(--gold); }
+
+        .tab-panel { display: none; width: 100%; }
+        .tab-panel.active { display: flex; flex-direction: column; }
+        @media (min-width: 1024px) { .tab-panel.active { flex-direction: row; } }
+
+        .ken-burns { animation: kenBurns 1.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; transform: scale(1.1); }
+        @keyframes kenBurns { from { transform: scale(1.1); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        .grain-overlay {
+            position: absolute; inset: 0; pointer-events: none; opacity: 0.03;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+        }
+
+        .page-view { display: none; }
+        .page-view.active { display: block; }
+        
+        .nav-hidden { transform: translateY(-100%); opacity: 0; }
+        .nav-visible { transform: translateY(0); opacity: 1; }
+        
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-dark); }
+        ::-webkit-scrollbar-thumb { background: #E9BE7433; border-radius: 10px; }
+    </style>
+</head>
+<body>
+    <div class="bg-accent"></div>
+
+    <!-- NATIVE SVG LIBRARY -->
+    <svg style="display:none">
+        <symbol id="icon-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></symbol>
+        <symbol id="icon-chevron-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></symbol>
+        <symbol id="icon-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></symbol>
+        <symbol id="icon-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></symbol>
+        <symbol id="icon-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></symbol>
+        <symbol id="icon-mail" viewBox="0 0 16 16" fill="currentColor"><path d="M8.47 1.318a1 1 0 0 0-.94 0l-6 3.2A1 1 0 0 0 1 5.4v.817l5.75 3.45L8 8.917l1.25.75L15 6.217V5.4a1 1 0 0 0-.53-.882zM15 7.383l-4.778 2.867L15 13.117zm-.035 6.88L8 10.082l-6.965 4.18A1 1 0 0 0 2 15h12a1 1 0 0 0 .965-.738ZM1 13.116l4.778-2.867L1 7.383v5.734ZM7.059.435a2 2 0 0 1 1.882 0l6 3.2A2 2 0 0 1 16 5.4V14a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V5.4a2 2 0 0 1 1.059-1.765z"/></symbol>
+        <symbol id="icon-globe" viewBox="0 0 16 16" fill="currentColor"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m7.5-6.923c-.67.204-1.335.82-1.887 1.855q-.215.403-.395.872c.705.157 1.472.257 2.282.287zM4.249 3.539q.214-.577.481-1.078a7 7 0 0 1 .597-.933A7 7 0 0 0 3.051 3.05q.544.277 1.198.49zM3.509 7.5c.036-1.07.188-2.087.436-3.008a9 9 0 0 1-1.565-.667A6.96 6.96 0 0 0 1.018 7.5zm1.4-2.741a12.3 12.3 0 0 0-.4 2.741H7.5V5.091c-.91-.03-1.783-.145-2.591-.332M8.5 5.09V7.5h2.99a12.3 12.3 0 0 0-.399-2.741c-.808.187-1.681.301-2.591.332zM4.51 8.5c.035.987.176 1.914.399 2.741A13.6 13.6 0 0 1 7.5 10.91V8.5zm3.99 0v2.409c.91.03 1.783.145 2.591.332.223-.827.364-1.754.4-2.741zm-3.282 3.696q.18.469.395.872c.552 1.035 1.218 1.65 1.887 1.855V11.91c-.81.03-1.577.13-2.282.287zm.11 2.276a7 7 0 0 1-.598-.933 9 9 0 0 1-.481-1.079 8.4 8.4 0 0 0-1.198.49 7 7 0 0 0 2.276 1.522zm-1.383-2.964A13.4 13.4 0 0 1 3.508 8.5h-2.49a6.96 6.96 0 0 0 1.362 3.675c.47-.258.995-.482 1.565-.667m6.728 2.964a7 7 0 0 0 2.275-1.521 8.4 8.4 0 0 0-1.197-.49 9 9 0 0 1-.481 1.078 7 7 0 1 1-.597.933M8.5 11.909v3.014c.67-.204 1.335-.82 1.887-1.855q.216-.403.395-.872A12.6 12.6 0 0 0 8.5 11.91zm3.555-.401c.57.185 1.095.409 1.565.667A6.96 6.96 0 0 0 14.982 8.5h-2.49a13.4 13.4 0 0 1-.437 3.008M14.982 7.5a6.96 6.96 0 0 0-1.362-3.675c-.47.258-.995.482-1.565.667.248.92.4 1.938.437 3.008zM11.27 2.461q.266.502.482 1.078a8.4 8.4 0 0 0 1.196-.49 7 7 0 0 0-2.275-1.52c.218.283.418.597.597.932m-.488 1.343a8 8 0 0 0-.395-.872C9.835 1.897 9.17 1.282 8.5 1.077V4.09c.81-.03 1.577-.13 2.282-.287z"/></symbol>
+        <symbol id="icon-phone" viewBox="0 0 16 16" fill="currentColor"><path d="M3.654 1.328a.678.678 0 0 0-1.015-.063L1.605 2.3c-.483.484-.661 1.169-.45 1.77a17.6 17.6 0 0 0 4.168 6.608 17.6 17.6 0 0 0 6.608 4.168c.601.211 1.286.033 1.77-.45l1.034-1.034a.678.678 0 0 0-.063-1.015l-2.307-1.794a.68.68 0 0 0-.58-.122l-2.19.547a1.75 1.75 0 0 1-1.657-.459L5.482 8.062a1.75 1.75 0 0 1-.46-1.657l.548-2.19a.68.68 0 0 0-.122-.58zM1.884.511a1.745 1.745 0 0 1 2.612.163L6.29 2.98c.329.423.445.974.315 1.494l-.547 2.19a.68.68 0 0 0 .178.643l2.457 2.457a.68.68 0 0 0 .644.178l2.189-.547a1.75 1.75 0 0 1 1.494.315l2.306 1.794c.829.645.905 1.87.163 2.611l-1.034 1.034c-.74.74-1.846 1.065-2.877.702a18.6 18.6 0 0 1-7.01-4.42 18.6 18.6 0 0 1-4.42-7.009c-.362-1.03-.037-2.137.703-2.877z"/></symbol>
+        <symbol id="icon-map-pin" viewBox="0 0 16 16" fill="currentColor"><path d="M12.166 8.94c-.524 1.062-1.234 2.12-1.96 3.07A32 32 0 0 1 8 14.58a32 32 0 0 1-2.206-2.57c-.726-.95-1.436-2.008-1.96-3.07C3.304 7.867 3 6.862 3 6a5 5 0 0 1 10 0c0 .862-.305 1.867-.834 2.94M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10"/>  <path d="M8 8a2 2 0 1 1 0-4 2 2 0 0 1 0 4m0 1a3 3 0 1 0 0-6 3 3 0 0 0 0 6"/></symbol>
+        <symbol id="icon-linkedin" viewBox="0 0 16 16" fill="currentColor"><path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854zm4.943 12.248V6.169H2.542v7.225zm-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248S2.4 3.226 2.4 3.934c0 .694.521 1.248 1.327 1.248zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016l.016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225z"/></symbol>
+        <symbol id="icon-substack" viewBox="0 0 16 16" fill="currentColor"><path d="M15 3.604H1v1.891h14v-1.89ZM1 7.208V16l7-3.926L15 16V7.208zM15 0H1v1.89h14z"/></symbol> 
+        <symbol id="icon-youtube" viewBox="0 0 16 16" fill="currentColor"><path d="M8.051 1.999h.089c.822.003 4.987.033 6.11.335a2.01 2.01 0 0 1 1.415 1.42c.101.38.172.883.22 1.402l.01.104.022.26.008.104c.065.914.073 1.77.074 1.957v.075c-.001.194-.01 1.108-.082 2.06l-.008.105-.009.104c-.05.572-.124 1.14-.235 1.558a2.01 2.01 0 0 1-1.415 1.42c-1.16.312-5.569.334-6.18.335h-.142c-.309 0-1.587-.006-2.927-.052l-.17-.006-.087-.004-.171-.007-.171-.007c-1.11-.049-2.167-.128-2.654-.26a2.01 2.01 0 0 1-1.415-1.419c-.111-.417-.185-.986-.235-1.558L.09 9.82l-.008-.104A31 31 0 0 1 0 7.68v-.123c.002-.215.01-.958.064-1.778l.007-.103.003-.052.008-.104.022-.26.01-.104c.048-.519.119-1.023.22-1.402a2.01 2.01 0 0 1 1.415-1.42c.487-.13 1.544-.21 2.654-.26l.17-.007.172-.006.086-.003.171-.007A100 100 0 0 1 7.858 2zM6.4 5.209v4.818l4.157-2.408z"/></symbol>
+    </svg>
+
+    <!-- NAVIGATION (LOCKED) -->
+    <nav id="top-nav" class="fixed top-0 left-0 w-full z-50 transition-all duration-500 border-b border-white/5 backdrop-blur-md bg-[#171B3B]/70 py-6 nav-visible px-[5%]">
+        <div class="max-w-[1800px] w-full mx-auto flex justify-between items-end relative">
+            <div class="flex items-end cursor-pointer w-44" onclick="navigateTo('Overview')">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 119.39 35.17" class="w-full h-auto block overflow-visible">
+                    <g id="Layer_2" data-name="Layer 2">
+                        <g id="BACK">
+                            <g>
+                                <path d="M1.51,35V26.5h1.4v7.3H9.47V35Z" transform="translate(-1.51)" style="fill: #FFFFFF"/>
+                                <path d="M20.92,34a7.26,7.26,0,0,1-4.3,1.2A7.25,7.25,0,0,1,12.33,34a3.86,3.86,0,0,1,0-6.41,7.25,7.25,0,0,1,4.29-1.2,7.26,7.26,0,0,1,4.3,1.2,3.88,3.88,0,0,1,0,6.41Zm-1.08-5.53a5.61,5.61,0,0,0-3.22-.86,5.66,5.66,0,0,0-3.24.86,2.78,2.78,0,0,0,0,4.65,5.5,5.5,0,0,0,3.23.88,5.47,5.47,0,0,0,3.22-.88,2.76,2.76,0,0,0,0-4.65Z" transform="translate(-1.51)" style="fill: #FFFFFF"/>
+                                <path d="M26.31,29V35h-1.4V26.36l8.53,6.22V26.5h1.41v8.67Z" transform="translate(-1.51)" style="fill: #FFFFFF"/>
+                                <path d="M44.2,31.7V30.65h4.56a3.87,3.87,0,0,1,0,.42,3.44,3.44,0,0,1-1.65,3A7.2,7.2,0,0,1,43,35.17,7.06,7.06,0,0,1,38.83,34a3.9,3.9,0,0,1,.24-6.64,7.64,7.64,0,0,1,1.9-.73,8.51,8.51,0,0,1,2.1-.25,9.37,9.37,0,0,1,4.43,1v1.28a8.78,8.78,0,0,0-4.38-1.14,7.51,7.51,0,0,0-1.51.15,6.13,6.13,0,0,0-1.42.49,2.79,2.79,0,0,0-1.11,1,2.71,2.71,0,0,0-.42,1.52A2.79,2.79,0,0,0,39.9,33.1a5.37,5.37,0,0,0,3.17.87,6.44,6.44,0,0,0,2.67-.55,2.51,2.51,0,0,0,1.48-1.72Z" transform="translate(-1.51)" style="fill: #FFFFFF"/>
+                                <path d="M50.83,35V26.5h1.4v7.3h6.56V35Z" transform="translate(-1.51)" style="fill: #FFFFFF"/>
+                                <path d="M60.67,35V26.5h1.41V35Z" transform="translate(-1.51)" style="fill: #FFFFFF"/>
+                                <path d="M71.43,31.7V30.65H76c0,.09,0,.23,0,.42a3.43,3.43,0,0,1-1.64,3,7.22,7.22,0,0,1-4.13,1.11A7.11,7.11,0,0,1,66.05,34a3.91,3.91,0,0,1,.25-6.64,7.56,7.56,0,0,1,1.89-.73,8.62,8.62,0,0,1,2.1-.25,9.41,9.41,0,0,1,4.44,1v1.28a8.78,8.78,0,0,0-4.38-1.14,7.44,7.44,0,0,0-1.51.15,6.13,6.13,0,0,0-1.42.49,2.66,2.66,0,0,0-1.11,1,2.71,2.71,0,0,0-.42,1.52,2.76,2.76,0,0,0,1.24,2.42,5.36,5.36,0,0,0,3.16.87A6.37,6.37,0,0,0,73,33.42a2.49,2.49,0,0,0,1.48-1.72Z" transform="translate(-1.51)" style="fill: #FFFFFF"/>
+                                <path d="M86.83,35V31.29H79.46V35h-1.4V26.5h1.4v3.57h7.37V26.5h1.41V35Z" transform="translate(-1.51)" style="fill: #FFFFFF"/>
+                                <path d="M94.15,35V27.72h-4.1V26.5h9.61v1.22H95.57V35Z" transform="translate(-1.51)" style="fill: #FFFFFF"/>
+                            </g>
+                            <g>
+                                <path d="M114.65,20.74H111.9c-5.28,0-5.27-5.27-5.27-5.27V12.74h0a.33.33,0,0,0-.33-.33h0a.34.34,0,0,0-.34.33h0v2.74c0,5.26-5.27,5.27-5.27,5.27H97.93a.34.34,0,0,0-.33.34h0a.33.33,0,0,0,.33.33h2.75c5.27,0,5.27,5.25,5.27,5.27v2.74h0a.34.34,0,0,0,.34.33h0a.33.33,0,0,0,.33-.33h0V26.69c0-5.31,5.27-5.27,5.27-5.27h2.75a.33.33,0,0,0,.33-.33h0A.33.33,0,0,0,114.65,20.74Z" transform="translate(-1.51)" style="fill: #e9be74"/>
+                                <path d="M106.29,11.59h0a.34.34,0,0,0,.33-.34h0s0,0,0-.05h0v-.85h0v-.05h0a.32.32,0,0,0-.32-.29h0a.33.33,0,0,0-.33.29h0v.05h0v.85h0s0,0,0,.05h0A.34.34,0,0,0,106.29,11.59Z" transform="translate(-1.51)" style="fill: #e9be74"/>
+                                <path d="M106.29,9.15h0a.33.33,0,0,0,.33-.33h0V8.42h0a.33.33,0,0,0-.33-.33h0a.34.34,0,0,0-.34.33h0v.4h0A.34.34,0,0,0,106.29,9.15Z" transform="translate(-1.51)" style="fill: #e9be74"/>
+                                <rect x="104.44" y="6.63" width="0.68" height="0.68" rx="0.33" style="fill: #e9be74"/>
+                                <rect x="104.44" y="5.11" width="0.68" height="0.68" rx="0.33" style="fill: #e9be74"/>
+                                <circle cx="104.78" cy="3.92" r="0.23" style="fill: #e9be74"/>
+                                <path d="M106.29,2.41a.16.16,0,0,0-.16.17.16.16,0,0,0,.16.16.17.17,0,0,0,.17-.16A.17.17,0,0,0,106.29,2.41Z" transform="translate(-1.51)" style="fill: #e9be74"/>
+                                <path d="M106.28,1.46a.16.16,0,0,0,.16-.16.17.17,0,0,0-.16-.17.18.18,0,0,0-.17.17A.17.17,0,0,0,106.28,1.46Z" transform="translate(-1.51)" style="fill: #e9be74"/>
+                                <path d="M106.28.23a.11.11,0,0,0,.11-.12.11.11,0,0,0-.11-.11.11.11,0,0,0-.12.11A.12.12,0,0,0,106.28.23Z" transform="translate(-1.51)" style="fill: #e9be74"/>
+                                <g>
+                                    <path d="M115.68,21.08h0a.33.33,0,0,0,.33.33h.42a.33.33,0,0,0,.33-.33h0a.34.34,0,0,0-.34-.33H116A.34.34,0,0,0,115.68,21.08Z" transform="translate(-1.51)" style="fill: #e9be74"/>
+                                    <rect x="116.01" y="20.74" width="0.68" height="0.68" rx="0.33" style="fill: #e9be74"/>
+                                    <circle cx="117.88" cy="21.08" r="0.23" style="fill: #e9be74"/>
+                                    <path d="M120.9,21.08a.17.17,0,0,0-.17-.16.16.16,0,0,0-.16.16.17.17,0,0,0,.16.17A.18.18,0,0,0,120.9,21.08Z" transform="translate(-1.51)" style="fill: #e9be74"/>
+                                </g>
+                            </g>
+                        </g>
+                    </g>
+                </svg>
+            </div>
+            <div class="hidden md:flex items-center gap-10 font-montserrat uppercase tracking-[0.2em] font-semibold text-[11px]">
+                <button onclick="navigateTo('Overview')" class="nav-link active text-[#E9BE74]" data-id="Overview">Overview</button>
+                <button onclick="navigateTo('Overview', '#who')" class="hover:text-[#E9BE74] text-white/60">Who we are</button>
+                <button onclick="navigateTo('Solutions')" class="nav-link text-white/60" data-id="Solutions">Solutions</button>
+                <button onclick="scrollToAnchor('#contact')" class="hover:text-[#E9BE74] text-white/60">Contact</button>
+                <button onclick="toggleModal('signin-modal', true)" class="border border-[#E9BE74] px-6 py-2 rounded-full text-[#E9BE74] hover:bg-[#E9BE74] hover:text-[#171B3B] transition-all font-bold">Sign In</button>
+            </div>
+            <button onclick="toggleMobileMenu()" class="md:hidden text-[#E9BE74]"><svg class="w-6 h-6"><use href="#icon-menu"></use></svg></button>
+        </div>
+    </nav>
+
+    <!-- MOBILE MENU -->
+    <div id="mobile-menu" class="fixed inset-0 z-[100] bg-[#171B3B] translate-x-full transition-transform duration-500 ease-in-out md:hidden pt-24">
+        <button onclick="toggleMobileMenu()" class="absolute top-8 right-8 text-white"><svg class="w-6 h-6"><use href="#icon-x"></use></svg></button>
+        <div class="px-[5%] pt-8 space-y-8 text-center flex flex-col items-center">
+            <button onclick="navigateTo('Overview')" class="text-2xl font-playfair text-white">Overview</button>
+            <button onclick="navigateTo('Overview', '#who')" class="text-2xl font-playfair text-white">Who we are</button>
+            <button onclick="navigateTo('Solutions')" class="text-2xl font-playfair text-white">Solutions</button>
+            <button onclick="scrollToAnchor('#contact')" class="text-2xl font-playfair text-white">Contact</button>
+            <button onclick="toggleModal('signin-modal', true)" class="w-full bg-[#E9BE74] text-[#171B3B] py-4 uppercase font-bold tracking-widest text-xs mt-8">Sign In</button>
+        </div>
+    </div>
+
+    <!-- MAIN VIEWS CONTAINER (LOCKED) -->
+    <main class="relative z-10">
+        
+        <div id="page-Overview" class="page-view active">
+            <!-- HERO (LOCKED) -->
+            <div class="w-full px-[5%] section-padding min-h-screen bg-[#171B3B]">
+                <div class="max-w-[1800px] w-full mx-auto">
+                    <section class="hero-layout">
+                        
+                        <div class="block-text">
+                            <h1 class="hero-h1">Making the <br /><span>Invisible, visible.</span></h1>
+                            <p class="hero-desc">Longlight works with decision-makers facing complex, high-stakes problems where uncertainty, misalignment, and noise make it difficult to see what actually matters—and where effort alone does not reliably translate into progress.</p>
+                            <a href="#" class="hero-link">Discover our approach <div class="line"></div></a>
+                        </div>
+
+                        <div class="image-card block-big-img">
+                            <img src="https://longlight.pumpanje.rs/assets/iStock-699938574.png" alt="Applied Work" />
+                            <div class="card-overlay">
+                                <span class="card-label">Applied Work</span>
+                                <h2 class="card-title card-title-lg">Enabling sound judgment by surfacing what is usually unseen.</h2>
+                                <button class="btn-explore">Explore our method</button>
+                            </div>
+                        </div>
+
+                        <div class="block-small-imgs small-cards-row">
+                            <div class="image-card">
+                                <img src="https://images.unsplash.com/photo-1676893705539-662b239ebebc?q=80&w=1632&auto=format&fit=crop" alt="The Challenge" />
+                                <div class="card-overlay">
+                                    <span class="card-label">The Challenge</span>
+                                    <p class="card-title">Where effort alone does not translate into progress.</p>
+                                </div>
+                            </div>
+                            <div class="image-card">
+                                <img src="https://images.unsplash.com/photo-1738839406047-09f5a018d9bb?q=80&w=1624&auto=format&fit=crop" alt="The Outcome" />
+                                <div class="card-overlay">
+                                    <span class="card-label">The Outcome</span>
+                                    <p class="card-title">Decisions made with clarity and accountability.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="block-newsletter newsletter-module">
+                            <div>
+                                <span class="card-label" style="opacity: 0.5;">Newsletter</span>
+                                <h3 class="news-h3">Subscribe to the latest Longlight updates</h3>
+                                <p class="news-desc">Quality over quantity. We only send the good stuff.</p>
+                            </div>
+                            
+                            <form class="news-form" onsubmit="event.preventDefault()">
+                                <div style="display: flex; gap: 1rem; align-items: flex-end; width: 100%;">
+                                    <div class="input-wrapper" style="flex: 1;">
+                                        <input type="email" placeholder="Email Address" class="input-field" required>
+                                    </div>
+                                    <button type="submit" class="btn-sub">Subscribe</button>
+                                </div>
+                                <label class="privacy-wrap" onclick="toggleNewsletterPrivacy()">
+                                    <div class="checkbox active" id="news-check-box">
+                                        <svg id="news-check-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#11142B" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                    </div>
+                                    <span class="privacy-txt">I agree to the <span onclick="navigateTo('PrivacyPolicy'); event.stopPropagation();">Privacy Policy</span>.</span>
+                                </label>
+                            </form>
+                        </div>
+
+                    </section>
+                </div>
+            </div>
+
+            <!-- WHO WE ARE SECTION (LOCKED) -->
+            <section id="who" class="slide-container pt-24 border-t border-white/5 scroll-mt-32">
+                <div class="max-w-[1800px] w-full mx-auto">
+                    <div class="max-w-4xl 2xl:max-w-5xl mb-12 text-left">
+                        <span class="tech-label mb-8">Who We Are</span>
+                        <h2 class="font-playfair text-4xl md:text-6xl text-white font-medium mb-6 leading-tight">Longlight is for people who carry <br /><span class="text-[#E9BE74] italic font-normal">responsibility for direction and outcomes.</span></h2>
+                        <p class="font-montserrat text-white/70 text-lg font-light leading-relaxed">Our work is especially relevant when strategy must be shaped through ongoing judgment rather than a single planning cycle—when decisions evolve over time, trade-offs are real, and clarity must be sustained rather than achieved momentarily.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 border-t border-white/10 mb-8">
+                        <button onclick="switchTab(0)" class="tab-btn active text-left py-10 px-8 relative group border-b border-white/5 overflow-hidden">
+                            <span class="idx-label text-[9px] font-bold tracking-[0.3em] mb-3 block text-[#E9BE74]">01</span>
+                            <h4 class="tab-title font-playfair text-xl text-white tracking-wider transition-all">Executives</h4>
+                            <div class="tab-indicator absolute bottom-0 left-8 h-[2px] bg-[#E9BE74] w-32 transition-all opacity-100"></div>
+                        </button>
+                        <button onclick="switchTab(1)" class="tab-btn text-left py-10 px-8 relative group border-b border-white/5 overflow-hidden">
+                            <span class="idx-label text-[9px] font-bold tracking-[0.3em] mb-3 block text-white/20">02</span>
+                            <h4 class="tab-title font-playfair text-xl text-white/40 transition-all">Public-Sector</h4>
+                            <div class="tab-indicator absolute bottom-0 left-8 h-[2px] bg-[#E9BE74] w-0 opacity-0 group-hover:w-12 group-hover:opacity-40 transition-all"></div>
+                        </button>
+                        <button onclick="switchTab(2)" class="tab-btn text-left py-10 px-8 relative group border-b border-white/5 overflow-hidden">
+                            <span class="idx-label text-[9px] font-bold tracking-[0.3em] mb-3 block text-white/20">03</span>
+                            <h4 class="tab-title font-playfair text-xl text-white/40 transition-all">Owners</h4>
+                            <div class="tab-indicator absolute bottom-0 left-8 h-[2px] bg-[#E9BE74] w-0 opacity-0 group-hover:w-12 group-hover:opacity-40 transition-all"></div>
+                        </button>
+                    </div>
+
+                    <div class="border border-white/10 bg-gradient-to-br from-[#0B0E60] to-[#171B3B] relative overflow-hidden">
+                        <div class="grain-overlay"></div>
+                        
+                        <div id="tab-panel-0" class="tab-panel active">
+                            <div class="lg:w-1/2 p-8 md:p-16 flex flex-col justify-center border-r border-white/10 items-start relative z-10 text-left">
+                                <span class="tech-label text-[#E9BE74] mb-4">The Initiative</span>
+                                <h3 class="font-playfair text-3xl md:text-4xl text-white mb-6 leading-tight">Executives</h3>
+                                <p class="font-montserrat text-white/70 text-base md:text-lg font-light leading-relaxed max-w-lg mb-12">Navigating complex, high-stakes problems where uncertainty and misalignment make it difficult to see what actually matters.</p>
+                                <button class="flex items-center text-[#E9BE74] hover:text-white group transition-colors"><span class="mr-2 font-medium">Learn more about our work</span><svg class="w-4 h-4 transition-transform group-hover:translate-x-1"><use href="#icon-chevron"></use></svg></button>
+                            </div>
+                            <div class="lg:w-1/2 h-[350px] md:h-[500px] relative overflow-hidden bg-[#11142B]"><img src="https://images.unsplash.com/photo-1700508671741-319c5c61f501?q=80&w=1567&auto=format&fit=crop" class="absolute inset-0 w-full h-full object-cover ken-burns"></div>
+                        </div>
+                        <div id="tab-panel-1" class="tab-panel">
+                            <div class="lg:w-1/2 p-8 md:p-16 flex flex-col justify-center border-r border-white/10 items-start relative z-10 text-left">
+                                <span class="tech-label text-[#E9BE74] mb-4">The Initiative</span>
+                                <h3 class="font-playfair text-3xl md:text-4xl text-white mb-6 leading-tight">Public-Sector Leaders</h3>
+                                <p class="font-montserrat text-white/70 text-base md:text-lg font-light leading-relaxed max-w-lg mb-12">Shaping strategy through ongoing judgment rather than a single planning cycle, managing real trade-offs.</p>
+                                <button class="flex items-center text-[#E9BE74] hover:text-white group transition-colors"><span class="mr-2 font-medium">Learn more about our work</span><svg class="w-4 h-4 transition-transform group-hover:translate-x-1"><use href="#icon-chevron"></use></svg></button>
+                            </div>
+                            <div class="lg:w-1/2 h-[350px] md:h-[500px] relative overflow-hidden bg-[#11142B]"><img src="https://images.unsplash.com/photo-1704748429464-e60204618b72?q=80&w=1632&auto=format&fit=crop" class="absolute inset-0 w-full h-full object-cover ken-burns"></div>
+                        </div>
+                        <div id="tab-panel-2" class="tab-panel">
+                            <div class="lg:w-1/2 p-8 md:p-16 flex flex-col justify-center border-r border-white/10 items-start relative z-10 text-left">
+                                <span class="tech-label text-[#E9BE74] mb-4">The Initiative</span>
+                                <h3 class="font-playfair text-3xl md:text-4xl text-white mb-6 leading-tight">Owners</h3>
+                                <p class="font-montserrat text-white/70 text-base md:text-lg font-light leading-relaxed max-w-lg mb-12">Engaged in strategic planning under real constraints and long time horizons, ensuring sustained momentum.</p>
+                                <button class="flex items-center text-[#E9BE74] hover:text-white group transition-colors"><span class="mr-2 font-medium">Learn more about our work</span><svg class="w-4 h-4 transition-transform group-hover:translate-x-1"><use href="#icon-chevron"></use></svg></button>
+                            </div>
+                            <div class="lg:w-1/2 h-[350px] md:h-[500px] relative overflow-hidden bg-[#11142B]"><img src="https://images.unsplash.com/photo-1704748429470-61aee520af65?q=80&w=1632&auto=format&fit=crop" class="absolute inset-0 w-full h-full object-cover ken-burns"></div>
+                        </div>
+                    </div>
+
+                    <div class="pt-24 border-t border-white/5 mt-24 text-left">
+                        <h2 class="font-playfair text-4xl md:text-6xl text-white font-medium mb-16 leading-tight max-w-5xl">Not predefined solutions, but the <span class="text-[#E9BE74] italic font-normal">creation of conditions for alignment.</span></h2>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-12">
+                            <div onclick="navigateTo('Solutions', '#solution-1')" class="group flex flex-col border border-white/10 bg-white/5 hover:border-[#E9BE74]/30 cursor-pointer transition-all duration-500">
+                                <div class="aspect-video overflow-hidden border-b border-white/10"><img src="https://images.unsplash.com/photo-1704748430013-41227f6abf2f?q=80&w=1632&auto=format&fit=crop" class="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"></div>
+                                <div class="p-8 space-y-4 bg-gradient-to-br from-[#0B0E60] to-[#171B3B]">
+                                    <div class="flex justify-between items-center"><h4 class="font-playfair text-xl group-hover:text-[#E9BE74] transition-colors">Surfacing Assumptions</h4><svg class="w-5 h-5 text-[#E9BE74] transition-transform group-hover:translate-x-1"><use href="#icon-chevron"></use></svg></div>
+                                    <p class="font-montserrat text-sm text-white/50 font-light leading-relaxed">Identifying unsaid constraints and fragmented signals.</p>
+                                </div>
+                            </div>
+                            <div onclick="navigateTo('Solutions', '#solution-2')" class="group flex flex-col border border-white/10 bg-white/5 hover:border-[#E9BE74]/30 cursor-pointer transition-all duration-500">
+                                <div class="aspect-video overflow-hidden border-b border-white/10"><img src="https://images.unsplash.com/photo-1694350021790-f4a9111b3127?q=80&w=1632&auto=format&fit=crop" class="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"></div>
+                                <div class="p-8 space-y-4 bg-gradient-to-br from-[#0B0E60] to-[#171B3B]">
+                                    <div class="flex justify-between items-center"><h4 class="font-playfair text-xl group-hover:text-[#E9BE74] transition-colors">Sustained Discernment</h4><svg class="w-5 h-5 text-[#E9BE74] transition-transform group-hover:translate-x-1"><use href="#icon-chevron"></use></svg></div>
+                                    <p class="font-montserrat text-sm text-white/50 font-light leading-relaxed">Guiding strategy through ongoing judgment.</p>
+                                </div>
+                            </div>
+                            <div onclick="navigateTo('Solutions', '#solution-3')" class="group flex flex-col border border-white/10 bg-white/5 hover:border-[#E9BE74]/30 cursor-pointer transition-all duration-500">
+                                <div class="aspect-video overflow-hidden border-b border-white/10"><img src="https://images.unsplash.com/photo-1704748430004-582944f83f3b?q=80&w=1632&auto=format&fit=crop" class="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"></div>
+                                <div class="p-8 space-y-4 bg-gradient-to-br from-[#0B0E60] to-[#171B3B]">
+                                    <div class="flex justify-between items-center"><h4 class="font-playfair text-xl group-hover:text-[#E9BE74] transition-colors">Long Time Horizons</h4><svg class="w-5 h-5 text-[#E9BE74] transition-transform group-hover:translate-x-1"><use href="#icon-chevron"></use></svg></div>
+                                    <p class="font-montserrat text-sm text-white/50 font-light leading-relaxed">Approach formed through real-world application.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <div id="page-Solutions" class="page-view">
+            <div class="slide-container text-left">
+                <div class="max-w-[1800px] w-full mx-auto">
+                    <div class="min-h-[40vh] flex flex-col justify-center pb-12">
+                        <span class="tech-label mb-4">Framework</span>
+                        <h1 class="font-playfair text-6xl md:text-8xl text-white font-medium leading-none">Modular <span class="text-[#E9BE74] italic font-normal">Solutions.</span></h1>
+                        <p class="mt-8 text-white/70 max-w-2xl font-light leading-relaxed text-lg">Longlight works with decision-makers facing complex problems where uncertainty and noise make progress feel impossible.</p>
+                    </div>
+                    
+                    <div id="solution-1" class="scroll-mt-32 pt-24 border-t border-white/5">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-16 md:gap-24 items-center">
+                            <div class="text-left space-y-8 pr-0 md:pr-12">
+                                <span class="tech-label">Solution 01</span>
+                                <h2 class="font-playfair text-4xl md:text-5xl text-white font-medium leading-tight">Surfacing <br /><span class="text-[#E9BE74] italic font-normal">Assumptions</span></h2>
+                                <p class="font-montserrat text-lg text-white/70 leading-relaxed font-light">Identifying the unsaid constraints and fragmented signals that create internal friction.</p>
+                            </div>
+                            <div class="aspect-[4/3] w-full relative overflow-hidden bg-white/5 border border-white/10 group"><img src="https://images.unsplash.com/photo-1704748430013-41227f6abf2f?q=80&w=1632&auto=format&fit=crop" class="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 scale-105 group-hover:scale-100"></div>
+                        </div>
+                    </div>
+
+                    <div id="solution-2" class="scroll-mt-32 pt-24 border-t border-white/5 mt-12">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-16 md:gap-24 items-center">
+                            <div class="text-left space-y-8 pr-0 md:pr-12">
+                                <span class="tech-label">Solution 02</span>
+                                <h2 class="font-playfair text-4xl md:text-5xl text-white font-medium leading-tight">Sustained <br /><span class="text-[#E9BE74] italic font-normal">Discernment</span></h2>
+                                <p class="font-montserrat text-lg text-white/70 leading-relaxed font-light">Guiding strategy through ongoing judgment rather than a rigid planning cycle.</p>
+                            </div>
+                            <div class="aspect-[4/3] w-full relative overflow-hidden bg-white/5 border border-white/10 group"><img src="https://images.unsplash.com/photo-1694350021790-f4a9111b3127?q=80&w=1632&auto=format&fit=crop" class="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 scale-105 group-hover:scale-100"></div>
+                        </div>
+                    </div>
+
+                    <div id="solution-3" class="scroll-mt-32 pt-24 border-t border-white/5 mt-12">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-16 md:gap-24 items-center">
+                            <div class="text-left space-y-8 pr-0 md:pr-12">
+                                <span class="tech-label">Solution 03</span>
+                                <h2 class="font-playfair text-4xl md:text-5xl text-white font-medium leading-tight">Long Time <br /><span class="text-[#E9BE74] italic font-normal">Horizons</span></h2>
+                                <p class="font-montserrat text-lg text-white/70 leading-relaxed font-light">An early-stage initiative forming its approach through real-world application.</p>
+                            </div>
+                            <div class="aspect-[4/3] w-full relative overflow-hidden bg-white/5 border border-white/10 group"><img src="https://images.unsplash.com/photo-1704748430004-582944f83f3b?q=80&w=1632&auto=format&fit=crop" class="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 scale-105 group-hover:scale-100"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="page-PrivacyPolicy" class="page-view">
+            <div class="slide-container text-left">
+                <div class="max-w-[1800px] w-full mx-auto">
+                    <span class="tech-label">Legal</span>
+                    <h1 class="font-playfair text-6xl md:text-8xl text-white mb-16 leading-tight">Privacy <span class="text-[#E9BE74] italic">Policy</span></h1>
+                    <div class="space-y-8 font-montserrat text-white/70 font-light leading-relaxed max-w-4xl">
+                        <p>At Longlight, we take your privacy seriously. This Privacy Policy outlines how we collect, use, and protect your personal information.</p>
+                        <h3 class="font-playfair text-2xl text-white mt-12 mb-4">1. Information Collection</h3>
+                        <p>We collect information that you provide directly to us, such as when you submit an inquiry through our contact form.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="page-BrandAssets" class="page-view">
+            <div class="slide-container text-left">
+                <div class="max-w-[1800px] w-full mx-auto">
+                    <div class="mb-24"><span class="tech-label">Resources</span><h1 class="font-playfair text-6xl md:text-8xl text-white font-medium leading-tight">Brand Assets <br /> <span class="text-[#E9BE74] italic font-normal">& Guidelines</span></h1></div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-px bg-white/5 border border-white/5">
+                        <div onclick="navigateTo('BrandGuidelines')" class="bg-[#171B3B] p-12 hover:bg-[#E9BE74]/5 transition-colors cursor-pointer group">
+                            <div class="flex justify-between items-start mb-8"><span class="tech-label text-[#E9BE74]">01</span><svg class="w-6 h-6 text-white/20 group-hover:text-[#E9BE74] transition-colors"><use href="#icon-chevron"></use></svg></div>
+                            <h3 class="font-playfair text-3xl text-white mb-4">Brand Guidelines</h3>
+                            <p class="font-montserrat font-light text-white/50 text-sm leading-relaxed max-w-sm">Rules and standards communicating how brand assets should be visually presented.</p>
+                        </div>
+                        <div class="bg-[#171B3B] p-12 group opacity-50"><div class="flex justify-between items-start mb-8"><span class="tech-label text-[#E9BE74]">02</span><svg class="w-6 h-6 text-white/20"><use href="#icon-chevron"></use></svg></div><h3 class="font-playfair text-3xl text-white mb-4">Brand Assets</h3><p class="font-montserrat font-light text-white/50 text-sm leading-relaxed max-w-sm">High-resolution PNG and SVG identity files.</p></div>
+                        <div class="bg-[#171B3B] p-12 group opacity-50"><div class="flex justify-between items-start mb-8"><span class="tech-label text-[#E9BE74]">03</span><svg class="w-6 h-6 text-white/20"><use href="#icon-chevron"></use></svg></div><h3 class="font-playfair text-3xl text-white mb-4">Marketing Assets</h3><p class="font-montserrat font-light text-white/50 text-sm leading-relaxed max-w-sm">Digital collateral for ecommerce stores and editorial ads.</p></div>
+                        <div class="bg-[#171B3B] p-12 group opacity-50"><div class="flex justify-between items-start mb-8"><span class="tech-label text-[#E9BE74]">04</span><svg class="w-6 h-6 text-white/20"><use href="#icon-chevron"></use></svg></div><h3 class="font-playfair text-3xl text-white mb-4">Media Assets</h3><p class="font-montserrat font-light text-white/50 text-sm leading-relaxed max-w-sm">High-resolution headshots for feature stories.</p></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="page-BrandGuidelines" class="page-view">
+            <div class="slide-container text-left">
+                <div class="max-w-[1800px] w-full mx-auto">
+                    <div class="mb-24">
+                        <span class="tech-label mb-4">Documentation</span>
+                        <h1 class="font-playfair text-5xl md:text-7xl text-white font-medium leading-none">Brand <span class="text-[#E9BE74] italic">guidelines</span></h1>
+                        <p class="font-montserrat font-light text-white/70 text-base md:text-lg mt-8 max-w-4xl leading-relaxed">
+                            Brand guidelines ensure consistent brand identity across all platforms by defining rules for visual and verbal communication. These guidelines are essential for maintaining a strong and recognizable brand image, ensuring that everyone involved in creating content adheres to the same standards.
+                        </p>
+                    </div>
+
+                    <div class="border-t border-white/5">
+                        
+                        <!-- 01. CHROMATIC FRAMEWORK ACCORDION -->
+                        <div class="accordion-item border-b border-white/5">
+                            <button class="accordion-trigger w-full flex justify-between items-center py-10 group transition-colors hover:bg-white/[0.02] px-4 -mx-4 rounded-lg">
+                                <h3 class="font-playfair text-2xl md:text-3xl text-white font-medium flex items-center">
+                                    <span class="w-8 h-px bg-white/20 group-hover:bg-[#E9BE74] transition-colors mr-4"></span> 
+                                    01. <span class="text-[#E9BE74] ml-3 transition-colors">Chromatic Framework</span>
+                                </h3>
+                                <div class="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center group-hover:border-[#E9BE74]/50 group-hover:bg-[#E9BE74]/5 transition-all">
+                                    <svg class="w-5 h-5 text-white/50 group-hover:text-[#E9BE74] accordion-icon"><use href="#icon-chevron-down"></use></svg>
+                                </div>
+                            </button>
+                            
+                            <div class="accordion-content">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 pb-16 pt-4 px-4">
+                                    <!-- Color Block 1 (Signature Gold) -->
+                                    <div>
+                                        <div class="aspect-square bg-[#E9BE74] shadow-2xl relative mb-6"></div>
+                                        <span class="tech-label mb-4">Signature Gold</span>
+                                        <div class="font-mono text-[10px] space-y-2">
+                                            <div class="flex justify-between border-b border-white/10 pb-1"><span class="text-white/40">ROLE</span><span class="text-white">Primary Brand Accent</span></div>
+                                            <div class="flex justify-between border-b border-white/10 pb-1"><span class="text-white/40">HEX</span><span class="text-white">#E9BE74</span></div>
+                                            <div class="flex justify-between border-b border-white/10 pb-1"><span class="text-white/40">RGB</span><span class="text-white">233, 190, 116</span></div>
+                                            <div class="flex justify-between border-b border-white/10 pb-1"><span class="text-white/40">CMYK</span><span class="text-white">0, 18, 50, 9</span></div>
+                                        </div>
+                                    </div>
+                                    <!-- Color Block 2 (Midnight Blue) -->
+                                    <div>
+                                        <div class="aspect-square bg-[#171B3B] shadow-2xl relative mb-6"></div>
+                                        <span class="tech-label mb-4">Midnight Blue</span>
+                                        <div class="font-mono text-[10px] space-y-2">
+                                            <div class="flex justify-between border-b border-white/10 pb-1"><span class="text-white/40">ROLE</span><span class="text-white">Primary Background</span></div>
+                                            <div class="flex justify-between border-b border-white/10 pb-1"><span class="text-white/40">HEX</span><span class="text-white">#171B3B</span></div>
+                                            <div class="flex justify-between border-b border-white/10 pb-1"><span class="text-white/40">RGB</span><span class="text-white">23, 27, 59</span></div>
+                                            <div class="flex justify-between border-b border-white/10 pb-1"><span class="text-white/40">CMYK</span><span class="text-white">61, 54, 0, 77</span></div>
+                                        </div>
+                                    </div>
+                                    <!-- Color Block 3 (Pure White) -->
+                                    <div>
+                                        <div class="aspect-square bg-white shadow-2xl relative mb-6"></div>
+                                        <span class="tech-label mb-4">Pure White</span>
+                                        <div class="font-mono text-[10px] space-y-2">
+                                            <div class="flex justify-between border-b border-white/10 pb-1"><span class="text-white/40">ROLE</span><span class="text-white">Primary Typography</span></div>
+                                            <div class="flex justify-between border-b border-white/10 pb-1"><span class="text-white/40">HEX</span><span class="text-white">#FFFFFF</span></div>
+                                            <div class="flex justify-between border-b border-white/10 pb-1"><span class="text-white/40">RGB</span><span class="text-white">255, 255, 255</span></div>
+                                            <div class="flex justify-between border-b border-white/10 pb-1"><span class="text-white/40">CMYK</span><span class="text-white">0, 0, 0, 0</span></div>
+                                        </div>
+                                    </div>
+                                    <!-- Color Block 4 (Gradient) -->
+                                    <div>
+                                        <div class="aspect-square bg-gradient-to-br from-[#0B0E60] to-[#171B3B] shadow-2xl relative mb-6"></div>
+                                        <span class="tech-label mb-4">Atmospheric Gradient</span>
+                                        <div class="font-mono text-[10px] space-y-2">
+                                            <div class="flex justify-between border-b border-white/10 pb-1"><span class="text-white/40">TYPE</span><span class="text-white">Linear Diagonal</span></div>
+                                            <div class="flex justify-between border-b border-white/10 pb-1"><span class="text-white/40">START</span><span class="text-white">#0B0E60</span></div>
+                                            <div class="flex justify-between border-b border-white/10 pb-1"><span class="text-white/40">END</span><span class="text-white">#171B3B</span></div>
+                                            <div class="flex justify-between border-b border-white/10 pb-1"><span class="text-white/40">OPACITY</span><span class="text-white">100%</span></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 02. TYPOGRAPHIC SPECIFICATION ACCORDION -->
+                        <div class="accordion-item border-b border-white/5">
+                            <button class="accordion-trigger w-full flex justify-between items-center py-10 group transition-colors hover:bg-white/[0.02] px-4 -mx-4 rounded-lg">
+                                <h3 class="font-playfair text-2xl md:text-3xl text-white font-medium flex items-center">
+                                    <span class="w-8 h-px bg-white/20 group-hover:bg-[#E9BE74] transition-colors mr-4"></span> 
+                                    02. <span class="text-[#E9BE74] ml-3 transition-colors">Typographic Specification</span>
+                                </h3>
+                                <div class="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center group-hover:border-[#E9BE74]/50 group-hover:bg-[#E9BE74]/5 transition-all">
+                                    <svg class="w-5 h-5 text-white/50 group-hover:text-[#E9BE74] accordion-icon"><use href="#icon-chevron-down"></use></svg>
+                                </div>
+                            </button>
+                            
+                            <div class="accordion-content">
+                                <div class="pb-24 pt-4 px-4">
+                                    <!-- PLAYFAIR DISPLAY -->
+                                    <div class="mb-32">
+                                        <div class="flex flex-col xl:flex-row gap-16 items-start mb-16">
+                                            <div class="xl:w-[45%] border-r border-white/10 pr-12 shrink-0">
+                                                <div class="font-playfair text-[#E9BE74] text-[12rem] leading-none mb-8">Aa</div>
+                                                <div class="font-mono text-[10px] space-y-2 mb-6">
+                                                    <div class="flex justify-between border-b border-white/10 pb-1"><span class="text-white/40">TYPEFACE</span><span class="text-white font-playfair text-xs tracking-widest">Playfair Display</span></div>
+                                                    <div class="flex justify-between border-b border-white/10 pb-1"><span class="text-white/40">DESIGNER</span><span class="text-white">Claus Eggers Sørensen</span></div>
+                                                </div>
+                                                <p class="font-montserrat text-white/70 text-sm leading-relaxed font-light">High-contrast serifs and authoritative geometry for strategic summary documentation.</p>
+                                            </div>
+                                            <div class="xl:w-[55%] w-full flex flex-col justify-center gap-10 pt-8 xl:pt-0">
+                                                <div>
+                                                    <span class="tech-label text-white/40 mb-3">Playfair Display Regular (400)</span>
+                                                    <p class="font-playfair font-normal text-3xl md:text-4xl text-white leading-tight">The quick brown fox jumps over the lazy dog</p>
+                                                </div>
+                                                <div>
+                                                    <span class="tech-label text-white/40 mb-3">Playfair Display Italic (300)</span>
+                                                    <p class="font-playfair italic font-light text-3xl md:text-4xl text-white leading-tight">The quick brown fox jumps over the lazy dog</p>
+                                                </div>
+                                                <div>
+                                                    <span class="tech-label text-white/40 mb-3">Playfair Display SemiBold (600)</span>
+                                                    <p class="font-playfair font-semibold text-3xl md:text-4xl text-white leading-tight">The quick brown fox jumps over the lazy dog</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="w-full">
+                                            <span class="tech-label text-white/20 mb-4">Integrated Specimen Grid: Playfair Display</span>
+                                            <div id="specimen-serif" class="grid grid-cols-6 md:grid-cols-13 border-t border-l border-white/5"></div>
+                                        </div>
+                                    </div>
+                                    <!-- MONTSERRAT -->
+                                    <div>
+                                        <div class="flex flex-col xl:flex-row gap-16 items-start mb-16">
+                                            <div class="xl:w-[45%] border-r border-white/10 pr-12 shrink-0">
+                                                <div class="font-montserrat font-light text-[#E9BE74] text-[12rem] leading-none mb-8">Aa</div>
+                                                <div class="font-mono text-[10px] space-y-2 mb-6">
+                                                    <div class="flex justify-between border-b border-white/10 pb-1"><span class="text-white/40">TYPEFACE</span><span class="text-white font-montserrat text-xs tracking-widest">Montserrat</span></div>
+                                                    <div class="flex justify-between border-b border-white/10 pb-1"><span class="text-white/40">DESIGNER</span><span class="text-white">Julieta Ulanovsky</span></div>
+                                                </div>
+                                                <p class="font-montserrat text-white/70 text-sm leading-relaxed font-light">Geometric sans-serif providing structural clarity for technical data analysis.</p>
+                                            </div>
+                                            <div class="xl:w-[55%] w-full flex items-center h-full pt-8 xl:pt-0">
+                                                <p class="font-montserrat font-light text-5xl md:text-6xl lg:text-7xl text-white leading-tight tracking-tight">The quick brown fox jumps over the lazy dog</p>
+                                            </div>
+                                        </div>
+                                        <div class="w-full">
+                                            <span class="tech-label text-white/20 mb-4">Integrated Specimen Grid: Montserrat</span>
+                                            <div id="specimen-sans" class="grid grid-cols-6 md:grid-cols-13 border-t border-l border-white/5"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- CONTACT MODULE -->
+    <section id="contact" class="bg-white py-32 relative z-10 px-[5%] text-left">
+        <div class="max-w-[1800px] w-full mx-auto flex flex-col lg:flex-row gap-16 lg:gap-24 items-center">
+            <div class="lg:w-[40%] space-y-8">
+                <h2 class="font-playfair text-5xl md:text-6xl text-[#171B3B] font-medium leading-tight">We welcome a <br /><span class="text-[#E9BE74] italic font-normal">conversation</span></h2>
+                <p class="font-montserrat text-base text-[#171B3B]/60 leading-relaxed font-light max-w-md">If this work is relevant to the challenges you’re navigating, we welcome a conversation to explore how Longlight can support your objectives.</p>
+                <div class="pt-4"><a href="mailto:hello@longlight.org" class="font-montserrat text-lg text-[#E9BE74] hover:text-[#171B3B] transition-colors">hello@longlight.org</a></div>
+            </div>
+            <div class="lg:w-[60%] w-full p-8 md:p-12 bg-gradient-to-br from-[#0B0E60] to-[#171B3B] shadow-2xl relative">
+                <div class="tech-label mb-8">Direct Inquiry</div>
+                <form class="space-y-8" onsubmit="event.preventDefault()">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                        <input type="text" placeholder="Name" class="bg-transparent border-b border-white/20 focus:border-[#E9BE74] w-full text-white pb-2 outline-none text-sm font-light">
+                        <input type="text" placeholder="Surname" class="bg-transparent border-b border-white/20 focus:border-[#E9BE74] w-full text-white pb-2 outline-none text-sm font-light">
+                    </div>
+                    <input type="email" placeholder="Email Address" class="bg-transparent border-b border-white/20 focus:border-[#E9BE74] w-full text-white pb-2 outline-none text-sm font-light">
+                    <input type="text" placeholder="Subject" class="bg-transparent border-b border-white/20 focus:border-[#E9BE74] w-full text-white pb-2 outline-none text-sm font-light">
+                    <textarea placeholder="Message" rows="3" class="bg-transparent border-b border-white/20 focus:border-[#E9BE74] w-full text-white pb-2 outline-none text-sm font-light resize-none"></textarea>
+                    <label class="flex items-start cursor-pointer group pt-2" onclick="togglePrivacy()">
+                        <div class="w-5 h-5 mt-0.5 border border-white/30 flex items-center justify-center mr-3 transition-colors" id="privacy-box">
+                            <svg class="w-3 h-3 text-[#171B3B] hidden" id="check-icon"><use href="#icon-check"></use></svg>
+                        </div>
+                        <span class="text-xs text-white/60 font-light leading-tight">I agree to the <span class="text-[#E9BE74] hover:text-white transition-colors cursor-pointer" onclick="navigateTo('PrivacyPolicy')">Privacy Policy</span> and consent to processing.</span>
+                    </label>
+                    <button type="submit" class="w-full bg-[#E9BE74] text-[#171B3B] py-4 uppercase text-xs font-bold tracking-widest hover:bg-white transition-colors">Submit Inquiry</button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="bg-gradient-to-b from-transparent to-[#0B0E60]/20 pt-24 pb-0 relative z-10 text-left mb-[5vw]">
+        <div class="max-w-[1800px] w-full mx-auto px-[5%] grid grid-cols-1 md:grid-cols-5 gap-x-12 gap-y-16 items-start mb-24">
+            
+            <div class="md:col-span-2 flex flex-col">
+                <div class="md:h-24 flex items-end mb-8 md:mb-12">
+                    <div class="w-[296px]">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 119.39 35.17" class="w-full h-auto block overflow-visible">
+                            <g id="Layer_2" data-name="Layer 2"><g id="BACK"><g><path d="M1.51,35V26.5h1.4v7.3H9.47V35Z" transform="translate(-1.51)" style="fill: #FFFFFF"/><path d="M20.92,34a7.26,7.26,0,0,1-4.3,1.2A7.25,7.25,0,0,1,12.33,34a3.86,3.86,0,0,1,0-6.41,7.25,7.25,0,0,1,4.29-1.2,7.26,7.26,0,0,1,4.3,1.2,3.88,3.88,0,0,1,0,6.41Zm-1.08-5.53a5.61,5.61,0,0,0-3.22-.86,5.66,5.66,0,0,0-3.24.86,2.78,2.78,0,0,0,0,4.65,5.5,5.5,0,0,0,3.23.88,5.47,5.47,0,0,0,3.22-.88,2.76,2.76,0,0,0,0-4.65Z" transform="translate(-1.51)" style="fill: #FFFFFF"/><path d="M26.31,29V35h-1.4V26.36l8.53,6.22V26.5h1.41v8.67Z" transform="translate(-1.51)" style="fill: #FFFFFF"/><path d="M44.2,31.7V30.65h4.56a3.87,3.87,0,0,1,0,.42,3.44,3.44,0,0,1-1.65,3A7.2,7.2,0,0,1,43,35.17,7.06,7.06,0,0,1,38.83,34a3.9,3.9,0,0,1,.24-6.64,7.64,7.64,0,0,1,1.9-.73,8.51,8.51,0,0,1,2.1-.25,9.37,9.37,0,0,1,4.43,1v1.28a8.78,8.78,0,0,0-4.38-1.14,7.51,7.51,0,0,0-1.51.15,6.13,6.13,0,0,0-1.42.49,2.79,2.79,0,0,0-1.11,1,2.71,2.71,0,0,0-.42,1.52A2.79,2.79,0,0,0,39.9,33.1a5.37,5.37,0,0,0,3.17.87,6.44,6.44,0,0,0,2.67-.55,2.51,2.51,0,0,0,1.48-1.72Z" transform="translate(-1.51)" style="fill: #FFFFFF"/><path d="M50.83,35V26.5h1.4v7.3h6.56V35Z" transform="translate(-1.51)" style="fill: #FFFFFF"/><path d="M60.67,35V26.5h1.41V35Z" transform="translate(-1.51)" style="fill: #FFFFFF"/><path d="M71.43,31.7V30.65H76c0,.09,0,.23,0,.42a3.43,3.43,0,0,1-1.64,3,7.22,7.22,0,0,1-4.13,1.11A7.11,7.11,0,0,1,66.05,34a3.91,3.91,0,0,1,.25-6.64,7.56,7.56,0,0,1,1.89-.73,8.62,8.62,0,0,1,2.1-.25,9.41,9.41,0,0,1,4.44,1v1.28a8.78,8.78,0,0,0-4.38-1.14,7.44,7.44,0,0,0-1.51.15,6.13,6.13,0,0,0-1.42.49,2.66,2.66,0,0,0-1.11,1,2.71,2.71,0,0,0-.42,1.52,2.76,2.76,0,0,0,1.24,2.42,5.36,5.36,0,0,0,3.16.87A6.37,6.37,0,0,0,73,33.42a2.49,2.49,0,0,0,1.48-1.72Z" transform="translate(-1.51)" style="fill: #FFFFFF"/><path d="M86.83,35V31.29H79.46V35h-1.4V26.5h1.4v3.57h7.37V26.5h1.41V35Z" transform="translate(-1.51)" style="fill: #FFFFFF"/><path d="M94.15,35V27.72h-4.1V26.5h9.61v1.22H95.57V35Z" transform="translate(-1.51)" style="fill: #FFFFFF"/></g><g><path d="M114.65,20.74H111.9c-5.28,0-5.27-5.27-5.27-5.27V12.74h0a.33.33,0,0,0-.33-.33h0a.34.34,0,0,0-.34.33h0v2.74c0,5.26-5.27,5.27-5.27,5.27H97.93a.34.34,0,0,0-.33.34h0a.33.33,0,0,0,.33.33h2.75c5.27,0,5.27,5.25,5.27,5.27v2.74h0a.34.34,0,0,0,.34.33h0a.33.33,0,0,0,.33-.33h0V26.69c0-5.31,5.27-5.27,5.27-5.27h2.75a.33.33,0,0,0,.33-.33h0A.33.33,0,0,0,114.65,20.74Z" transform="translate(-1.51)" style="fill: #e9be74"/><path d="M106.29,11.59h0a.34.34,0,0,0,.33-.34h0s0,0,0-.05h0v-.85h0v-.05h0a.32.32,0,0,0-.32-.29h0a.33.33,0,0,0-.33.29h0v.05h0v.85h0s0,0,0,.05h0A.34.34,0,0,0,106.29,11.59Z" transform="translate(-1.51)" style="fill: #e9be74"/><path d="M106.29,9.15h0a.33.33,0,0,0,.33-.33h0V8.42h0a.33.33,0,0,0-.33-.33h0a.34.34,0,0,0-.34.33h0v.4h0A.34.34,0,0,0,106.29,9.15Z" transform="translate(-1.51)" style="fill: #e9be74"/><rect x="104.44" y="6.63" width="0.68" height="0.68" rx="0.33" style="fill: #e9be74"/><rect x="104.44" y="5.11" width="0.68" height="0.68" rx="0.33" style="fill: #e9be74"/><circle cx="104.78" cy="3.92" r="0.23" style="fill: #e9be74"/><path d="M106.29,2.41a.16.16,0,0,0-.16.17.16.16,0,0,0,.16.16.17.17,0,0,0,.17-.16A.17.17,0,0,0,106.29,2.41Z" transform="translate(-1.51)" style="fill: #e9be74"/><path d="M106.28,1.46a.16.16,0,0,0,.16-.16.17.17,0,0,0-.16-.17.18.18,0,0,0-.17.17A.17.17,0,0,0,106.28,1.46Z" transform="translate(-1.51)" style="fill: #e9be74"/><path d="M106.28.23a.11.11,0,0,0,.11-.12.11.11,0,0,0-.11-.11.11.11,0,0,0-.12.11A.12.12,0,0,0,106.28.23Z" transform="translate(-1.51)" style="fill: #e9be74"/><g>
+                                    <path d="M115.68,21.08h0a.33.33,0,0,0,.33.33h.42a.33.33,0,0,0,.33-.33h0a.34.34,0,0,0-.34-.33H116A.34.34,0,0,0,115.68,21.08Z" transform="translate(-1.51)" style="fill: #e9be74"/><rect x="116.01" y="20.74" width="0.68" height="0.68" rx="0.33" style="fill: #e9be74"/><circle cx="117.88" cy="21.08" r="0.23" style="fill: #e9be74"/><path d="M120.9,21.08a.17.17,0,0,0-.17-.16.16.16,0,0,0-.16.16.17.17,0,0,0,.16.17A.18.18,0,0,0,120.9,21.08Z" transform="translate(-1.51)" style="fill: #e9be74"/></g></g></g></g></svg>
+                    </div>
+                </div>
+                <div class="grid grid-cols-[28px_1fr] gap-y-5 text-white/60 text-sm font-light">
+                    <div class="flex justify-start pt-0.5"><svg class="w-5 h-5 text-[#E9BE74]"><use href="#icon-phone"></use></svg></div>
+                    <span>858-925-3743</span>
+                    <div class="flex justify-start pt-0.5"><svg class="w-5 h-5 text-[#E9BE74]"><use href="#icon-mail"></use></svg></div>
+                    <span class="hover:text-white cursor-pointer transition-colors">hello@longlight.org</span>
+                    <div class="flex justify-start pt-0.5"><svg class="w-5 h-5 text-[#E9BE74]"><use href="#icon-globe"></use></svg></div>
+                    <span class="hover:text-white cursor-pointer transition-colors">www.longlight.org</span>
+                    <div class="flex justify-start pt-0.5"><svg class="w-5 h-5 text-[#E9BE74] mt-1"><use href="#icon-map-pin"></use></svg></div>
+                    <span class="leading-relaxed">1120 S Rackham Way Suite 300,<br>Meridian, ID 83642</span>
+                </div>
+            </div>
+
+            <div class="flex flex-col">
+                <div class="md:h-24 flex items-end mb-6 md:mb-12">
+                    <h4 class="tech-label text-[#E9BE74] mb-0 leading-none">Website</h4>
+                </div>
+                <ul class="text-sm text-white/60 space-y-4 cursor-pointer">
+                    <li onclick="navigateTo('Overview')" class="hover:text-[#E9BE74] transition-colors">Overview</li>
+                    <li onclick="navigateTo('Overview', '#who')" class="hover:text-[#E9BE74] transition-colors">Who we are</li>
+                    <li onclick="navigateTo('Solutions')" class="hover:text-[#E9BE74] transition-colors">Solutions</li>
+                </ul>
+            </div>
+
+            <div class="flex flex-col">
+                <div class="md:h-24 flex items-end mb-6 md:mb-12">
+                    <h4 class="tech-label text-[#E9BE74] mb-0 leading-none">Other Pages</h4>
+                </div>
+                <ul class="text-sm text-white/60 space-y-4 cursor-pointer">
+                    <li onclick="toggleModal('signin-modal', true)" class="hover:text-[#E9BE74] transition-colors">Sign In</li>
+                    <li onclick="navigateTo('PrivacyPolicy')" class="hover:text-[#E9BE74] transition-colors">Privacy Policy</li>
+                    <li onclick="navigateTo('BrandAssets')" class="hover:text-[#E9BE74] transition-colors">Brand Assets</li>
+                </ul>
+            </div>
+
+            <div class="flex flex-col">
+                <div class="md:h-24 flex items-end mb-6 md:mb-12">
+                    <h4 class="tech-label text-[#E9BE74] mb-0 leading-none">Social</h4>
+                </div>
+                <ul class="text-sm text-white/60 space-y-4 cursor-pointer">
+                    <li class="flex items-center group hover:text-white transition-colors">
+                        <svg class="w-5 h-5 mr-3 text-white/60 group-hover:text-[#E9BE74] transition-colors"><use href="#icon-substack"></use></svg>Substack
+                    </li>
+                    <li class="flex items-center group hover:text-white transition-colors">
+                        <svg class="w-5 h-5 mr-3 text-white/60 group-hover:text-[#E9BE74] transition-colors"><use href="#icon-linkedin"></use></svg>LinkedIn
+                    </li>
+                    <li class="flex items-center group hover:text-white transition-colors">
+                        <svg class="w-5 h-5 mr-3 text-white/60 group-hover:text-[#E9BE74] transition-colors"><use href="#icon-youtube"></use></svg>YouTube
+                    </li>
+                </ul>
+            </div>
+            
+        </div>
+        
+        <div class="w-full bg-gradient-to-r from-[#0B0E60]/60 via-[#0B0E60]/20 to-transparent py-6 border-t border-white/5">
+            <div class="max-w-[1800px] w-full mx-auto px-[5%] flex flex-col md:flex-row justify-between items-center text-[10px] tracking-[0.3em] text-white/40 uppercase gap-4">
+                <span>© 2026 Longlight - All Rights Reserved</span>
+                <span>Created by RuaRua Agency</span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- SIGNIN MODAL -->
+    <div id="signin-modal" class="fixed inset-0 z-[200] flex items-center justify-center bg-[#171B3B]/95 backdrop-blur-xl hidden p-8">
+        <button class="absolute top-12 right-12 text-white/40 hover:text-white uppercase text-[10px] tracking-widest font-bold flex items-center" onclick="toggleModal('signin-modal', false)">Close <svg class="ml-2 w-4 h-4"><use href="#icon-x"></use></svg></button>
+        <div class="w-full max-w-md text-left space-y-12">
+            <div class="space-y-2"><span class="tech-label">Authentication Required</span><h2 class="font-playfair text-5xl text-white leading-tight">Access <span class="text-[#E9BE74] italic">Portal.</span></h2></div>
+            <form class="space-y-6" onsubmit="event.preventDefault()">
+                <div class="space-y-2 border-b border-white/10 pb-4"><label class="tech-label text-white/30">Identifier</label><input type="text" class="bg-transparent border-none w-full text-white focus:outline-none placeholder:text-white/10 font-light" placeholder="username@longlight.com"></div>
+                <div class="space-y-2 border-b border-white/10 pb-4"><label class="tech-label text-white/30">Protocol</label><input type="password" class="bg-transparent border-none w-full text-white focus:outline-none placeholder:text-white/10 font-light" placeholder="••••••••"></div>
+                <button class="w-full bg-[#E9BE74] text-[#171B3B] py-4 uppercase text-xs tracking-widest font-bold rounded-sm hover:bg-white transition-colors">Initialize Login</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ENGINE -->
+    <script>
+        let lastScrollY = window.scrollY;
+        window.addEventListener('scroll', () => {
+            const nav = document.getElementById('top-nav');
+            if(!nav) return;
+            if (window.scrollY < 10) { nav.className = 'fixed top-0 left-0 w-full z-50 transition-all duration-500 border-b border-white/5 backdrop-blur-md bg-[#171B3B]/70 py-6 nav-visible px-[5%]'; }
+            else if (window.scrollY > lastScrollY) { nav.classList.add('nav-hidden'); nav.classList.remove('nav-visible'); }
+            else { nav.classList.remove('nav-hidden'); nav.classList.add('nav-visible'); }
+            lastScrollY = window.scrollY;
+        });
+
+        function navigateTo(pageId, anchor) {
+            document.querySelectorAll('.page-view').forEach(p => p.classList.remove('active'));
+            const targetPage = document.getElementById('page-' + pageId);
+            if(targetPage) {
+                targetPage.classList.add('active');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                document.querySelectorAll('.nav-link').forEach(b => {
+                    const isActive = b.dataset.id === pageId;
+                    b.classList.toggle('text-[#E9BE74]', isActive);
+                    b.classList.toggle('text-white/60', !isActive);
+                });
+
+                // Specific Initialization for Brand Guidelines
+                if(pageId === 'BrandGuidelines') {
+                    initAccordionEngine();
+                }
+
+                if(anchor) {
+                    setTimeout(() => {
+                        const el = document.querySelector(anchor);
+                        if(el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }, 150);
+                }
+            }
+            const mob = document.getElementById('mobile-menu');
+            if(mob) mob.classList.add('translate-x-full');
+        }
+
+        function scrollToAnchor(id) {
+            const el = document.querySelector(id);
+            if(el) el.scrollIntoView({ behavior: 'smooth' });
+            const mob = document.getElementById('mobile-menu');
+            if(mob) mob.classList.add('translate-x-full');
+        }
+
+        function switchTab(idx) {
+            document.querySelectorAll('.tab-btn').forEach((btn, i) => {
+                const isActive = (i === idx);
+                btn.classList.toggle('active', isActive);
+                const indicator = btn.querySelector('.tab-indicator');
+                if(indicator) {
+                    if(isActive) { indicator.style.width = '32px'; indicator.style.opacity = '1'; }
+                    else { indicator.style.width = '0'; indicator.style.opacity = '0'; }
+                }
+            });
+
+            document.querySelectorAll('.tab-panel').forEach((panel, i) => {
+                panel.classList.toggle('active', i === idx);
+                if(i === idx) {
+                    const img = panel.querySelector('img');
+                    if(img) {
+                        img.classList.remove('ken-burns');
+                        void img.offsetWidth;
+                        img.classList.add('ken-burns');
+                    }
+                }
+            });
+        }
+
+        function toggleMobileMenu() { document.getElementById('mobile-menu').classList.toggle('translate-x-full'); }
+        function toggleModal(id, show) { document.getElementById(id).classList.toggle('hidden', !show); document.body.style.overflow = show ? 'hidden' : 'auto'; }
+        
+        function togglePrivacy() { 
+            const check = document.getElementById('check-icon'); 
+            const box = document.getElementById('privacy-box'); 
+            if(!check || !box) return;
+            check.classList.toggle('hidden'); 
+            const isActive = !check.classList.contains('hidden'); 
+            box.style.backgroundColor = isActive ? '#E9BE74' : 'transparent'; 
+            box.style.borderColor = isActive ? '#E9BE74' : 'rgba(255, 255, 255, 0.3)'; 
+        }
+        
+        function toggleNewsletterPrivacy() { 
+            const icon = document.getElementById('news-check-icon');
+            const box = document.getElementById('news-check-box');
+            if(!icon || !box) return;
+            const isActive = box.classList.contains('active');
+            if (isActive) { icon.style.display = 'none'; box.classList.remove('active'); }
+            else { icon.style.display = 'block'; box.classList.add('active'); }
+        }
+
+        // --- BRAND GUIDELINES ENGINE ---
+        function initAccordionEngine() {
+            document.querySelectorAll('.accordion-trigger').forEach(trigger => {
+                // Ensure we don't double-attach listeners
+                if(trigger.dataset.initialized) return;
+                trigger.dataset.initialized = "true";
+
+                trigger.addEventListener('click', () => {
+                    const item = trigger.closest('.accordion-item');
+                    const content = item.querySelector('.accordion-content');
+                    const isOpen = item.classList.contains('is-open');
+
+                    if (!isOpen) {
+                        item.classList.add('is-open');
+                        content.style.maxHeight = content.scrollHeight + "px";
+                        
+                        if(content.querySelector('#specimen-serif') && content.querySelector('#specimen-serif').children.length === 0) {
+                            renderSpecimens();
+                            setTimeout(() => { content.style.maxHeight = content.scrollHeight + "px"; }, 50);
+                        }
+                    } else {
+                        item.classList.remove('is-open');
+                        content.style.maxHeight = null;
+                    }
+                });
+            });
+        }
+
+        function renderSpecimens() {
+            const serif = document.getElementById('specimen-serif');
+            const sans = document.getElementById('specimen-sans');
+            if(!serif || !sans) return;
+            const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").map(c => c + c.toLowerCase());
+            chars.forEach((pair, i) => {
+                const s = document.createElement('div'); s.className="specimen-cell group";
+                s.innerHTML = `<span class="cell-index">${(i+1).toString().padStart(2,'0')}</span><span class="font-playfair text-[#E9BE74] text-xl group-hover:scale-125 transition-transform">${pair}</span>`;
+                serif.appendChild(s);
+                const sn = document.createElement('div'); sn.className="specimen-cell group";
+                sn.innerHTML = `<span class="cell-index">${(i+1).toString().padStart(2,'0')}</span><span class="font-montserrat font-light text-[#E9BE74] text-xl group-hover:scale-125 transition-transform">${pair}</span>`;
+                sans.appendChild(sn);
+            });
+        }
+    </script>
+</body>
+</html>
