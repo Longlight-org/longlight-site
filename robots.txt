@@ -1,3 +1,16 @@
+# Public search discovery is allowed. Model training is not authorized.
+# Provider controls below express opt-outs to compliant services.
+User-agent: GPTBot
+Disallow: /
+
+User-agent: ClaudeBot
+Disallow: /
+
+# Google's control also covers some Gemini/Vertex grounding uses.
+# It does not disable Google Search indexing.
+User-agent: Google-Extended
+Disallow: /
+
 User-agent: *
 Allow: /
 
